@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Enroll student face | Attend75{% endblock %}
+{% block head %}
+<style>
+.face-enroll{max-width:850px;margin:auto}.face-card{background:var(--card,#111b2e);border:1px solid var(--border,var(--line));border-radius:20px;padding:24px}.face-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.preview{background:#050a14;border:1px solid #26354d;border-radius:16px;overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center;color:#9aaac0}.preview video,.preview img{width:100%;height:100%;object-fit:cover}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:130px}.privacy{font-size:12px;line-height:1.6;color:var(--muted)}.consent{display:flex;gap:10px;margin:16px 0;align-items:flex-start}@media(max-width:700px){.face-grid{grid-template-columns:1fr}.face-card{padding:16px}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-heading"><div><span class="eyebrow">ITM GIDA · ADMIN ONLY</span><h1>Face enrollment</h1><p>Register one clear reference face for {{ student['name'] }} ({{ student['college_id'] or 'No roll number' }}).</p></div></section>
+<div class="face-enroll"><section class="face-card">
+<p class="privacy">Get the student's informed permission before enrolling. Use one person, face centered, neutral expression and good lighting. The reference image is stored in the private_faces folder, not public static files.</p>
+<div class="face-grid">
+<div><div class="preview"><video id="faceVideo" autoplay playsinline muted hidden></video><img id="facePreview" alt="Face reference preview" hidden><span id="placeholder">Camera preview</span></div><div class="actions"><button type="button" id="startFace">Start camera</button><button type="button" id="captureFace" class="secondary" disabled>Capture</button><button type="button" id="retakeFace" class="secondary" hidden>Retake</button></div><p id="faceStatus" class="privacy" aria-live="polite">Camera access requires localhost or HTTPS.</p></div>
+<div><h2 style="margin-top:0">Enrollment checklist</h2><ul><li>Only one face in frame</li><li>Remove face coverings if comfortable</li><li>Use even lighting and look at camera</li><li>Do not enroll a photo of a screen</li></ul><form method="post" id="enrollForm"><input type="hidden" name="face_data" id="faceData"><label class="consent"><input type="checkbox" name="face_consent" value="yes" required><span>I confirm the student has been informed and has consented to use of their face image for this attendance prototype.</span></label><button id="saveFace" class="primary-btn" type="submit" disabled>Save reference face</button></form></div>
+</div>
+<p class="privacy" style="margin-top:18px">Face matching can make proxy attendance harder, but it is not perfect and this feature does not include certified liveness detection. Provide a teacher review/manual alternative for failed matches and delete reference data when no longer needed.</p><p><a href="{{ url_for('dashboard') }}">← Back to admin dashboard</a></p>
+</section></div><canvas id="faceCanvas" hidden></canvas>
+{% endblock %}
+{% block scripts %}
+<script>
+(()=>{const video=document.getElementById('faceVideo'),preview=document.getElementById('facePreview'),placeholder=document.getElementById('placeholder'),status=document.getElementById('faceStatus'),start=document.getElementById('startFace'),capture=document.getElementById('captureFace'),retake=document.getElementById('retakeFace'),data=document.getElementById('faceData'),save=document.getElementById('saveFace'),canvas=document.getElementById('faceCanvas');let stream=null;
+function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;}
+start.onclick=async()=>{try{if(!navigator.mediaDevices?.getUserMedia)throw Error('Camera requires localhost or HTTPS.');stop();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});video.srcObject=stream;video.hidden=false;preview.hidden=true;placeholder.hidden=true;capture.disabled=false;status.textContent='Camera ready. Center one face in the frame.';}catch(e){status.textContent=e.message||'Camera permission denied.';}};
+capture.onclick=()=>{if(!stream||!video.videoWidth){status.textContent='Wait for camera preview, then capture.';return;}let scale=Math.min(1,960/video.videoWidth);canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);data.value=canvas.toDataURL('image/jpeg',.85);preview.src=data.value;preview.hidden=false;video.hidden=true;placeholder.hidden=true;stop();capture.disabled=true;retake.hidden=false;save.disabled=false;status.textContent='Reference photo captured. Review it before saving.';};
+retake.onclick=()=>{data.value='';save.disabled=true;preview.hidden=true;placeholder.hidden=false;retake.hidden=true;capture.disabled=true;start.click();};
+document.getElementById('enrollForm').addEventListener('submit',e=>{if(!data.value){e.preventDefault();status.textContent='Capture a reference face first.';}});window.addEventListener('pagehide',stop);
+})();
+</script>
+{% endblock %}

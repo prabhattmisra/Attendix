@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d1b">
+  <meta name="description" content="Attend75 — attendance insights for the ITM GIDA student project prototype.">
+  <title>{% block title %}Attend75 | ITM GIDA{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brandmark"><span>✓</span></span><span class="brand-copy">Attend<span>75</span><small>ITM GIDA · GORAKHPUR</small></span></a>
+    <div class="campus-label">CAMPUS PORTAL</div>
+    <nav class="side-nav" aria-label="Main navigation">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}" class="nav-item"><span class="nav-icon">⌂</span><span>Dashboard</span></a>
+        {% if session.get('user_role') == 'student' %}<a href="{{ url_for('join') }}" class="nav-item"><span class="nav-icon">◉</span><span>Mark attendance</span></a>{% endif %}
+        {% if session.get('user_role') == 'admin' %}<a href="{{ url_for('dashboard') }}#register-student" class="nav-item"><span class="nav-icon">＋</span><span>Register accounts</span></a>{% endif %}
+        <a href="{{ url_for('dashboard') }}#insights" class="nav-item"><span class="nav-icon">▥</span><span>Attendance insights</span></a>
+      {% else %}<a href="{{ url_for('index') }}" class="nav-item"><span class="nav-icon">⌂</span><span>Home</span></a><a href="{{ url_for('login') }}" class="nav-item"><span class="nav-icon">↗</span><span>Sign in</span></a>{% endif %}
+    </nav>
+    <div class="sidebar-bottom"><div class="campus-mini"><div class="campus-emblem">ITM</div><div><strong>ITM GIDA</strong><small>Gorakhpur, Uttar Pradesh</small></div></div><div class="sidebar-motto">Knowledge · Innovation · Excellence</div></div>
+  </aside>
+  <div class="main-area">
+    <header class="topbar"><button class="mobile-menu" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button><div class="topbar-context"><span class="live-dot"></span><span>ITM GIDA <b>/</b> Attend75</span></div><div class="topbar-right">{% if session.get('user_id') %}<span class="role-pill">{{ session.get('user_role','user')|title }} portal</span><div class="user-chip"><span class="avatar">{{ (session.get('user_name') or 'A')[0]|upper }}</span><span class="user-chip-label">{{ session.get('user_name','Campus user') }}</span></div><a class="logout-link" href="{{ url_for('logout') }}">Log out ↗</a>{% else %}<a class="login-link" href="{{ url_for('login') }}">Sign in ↗</a>{% endif %}</div></header>
+    <main class="container">
+      {% with messages=get_flashed_messages() %}{% for m in messages %}<div class="flash" role="status"><span>✦</span>{{ m }}</div>{% endfor %}{% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer"><span class="footer-brand">Attend<span>75</span></span><span>Student project prototype · ITM GIDA, Gorakhpur</span><span class="footer-tagline">Because every class counts.</span></footer>
+  </div>
+</div>
+<script>
+(function(){const btn=document.getElementById('menuToggle'),side=document.getElementById('sidebar');if(btn&&side){btn.addEventListener('click',()=>{const open=side.classList.toggle('sidebar-open');btn.setAttribute('aria-expanded',String(open));});document.addEventListener('click',e=>{if(window.innerWidth<900&&!side.contains(e.target)&&!btn.contains(e.target))side.classList.remove('sidebar-open');});}})();
+</script>
+{% block scripts %}{% endblock %}
+</body></html>

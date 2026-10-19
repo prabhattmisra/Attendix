@@ -1,0 +1,3 @@
+Attend75 ITM GIDA Dark Premium UI
+UI update: responsive navigation, student analytics charts, dark dashboard styling
+Database: no database file included; existing attendance.db must be preserved

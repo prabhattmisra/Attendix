@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Selfie Attendance | Attend75{% endblock %}
+{% block head %}
+<style>
+.selfie-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);gap:20px;align-items:start}.selfie-card{background:var(--card, #111b2e);border:1px solid var(--border,rgba(148,163,184,.18));border-radius:20px;padding:24px;box-shadow:0 14px 36px #02061724}.camera-frame{position:relative;overflow:hidden;border-radius:16px;background:#050a14;aspect-ratio:4/3;display:grid;place-items:center;border:1px solid #26354d}.camera-frame video,.camera-frame canvas{width:100%;height:100%;object-fit:cover}.camera-placeholder{color:#9aaac0;text-align:center;padding:20px}.camera-placeholder strong{display:block;color:#e5edf8;margin:10px 0 4px}.camera-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.camera-actions button{flex:1;min-width:130px}.field-label{display:block;margin:16px 0 7px;font-weight:650}.consent-line{display:flex;gap:10px;align-items:flex-start;margin:18px 0;color:#c1cde0;font-size:13px;line-height:1.5}.consent-line input{margin-top:4px;accent-color:#55e6bd}.privacy-note{font-size:12px;color:#9aaac0;line-height:1.6}.secure-badge{display:inline-flex;gap:7px;align-items:center;border:1px solid #235f55;color:#7ce8c7;background:#0d2a2b;border-radius:999px;padding:6px 10px;font-size:12px}.step-list{padding-left:20px;color:#b7c5d9;line-height:1.9}.primary-btn{background:linear-gradient(135deg,#5ce6be,#41b9e9);color:#071321;border:0;font-weight:800}.primary-btn:disabled{opacity:.45;cursor:not-allowed}@media(max-width:760px){.selfie-layout{grid-template-columns:1fr}.selfie-card{padding:18px}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-heading"><div><span class="eyebrow">ITM GIDA · STUDENT PORTAL</span><h1>Selfie attendance</h1><p>Capture a fresh selfie to submit your attendance for the active lecture.</p></div><span class="secure-badge">● Camera verification enabled</span></section>
+<div class="selfie-layout">
+  <section class="selfie-card">
+    <h2 style="margin:0 0 6px">Verify your presence</h2><p class="muted" style="margin-top:0">Allow camera access, capture your face, then enter the teacher's active attendance code.</p>
+    <div class="camera-frame" id="cameraFrame"><div class="camera-placeholder" id="cameraPlaceholder"><div style="font-size:38px">◎</div><strong>Camera preview</strong><span>Tap “Start camera” to begin</span></div><video id="cameraVideo" autoplay playsinline muted hidden></video><img id="selfiePreview" alt="Captured selfie preview" hidden style="width:100%;height:100%;object-fit:cover"></div>
+    <div class="camera-actions"><button type="button" id="startCamera">Start camera</button><button type="button" id="captureSelfie" class="secondary" disabled>Capture selfie</button><button type="button" id="retakeSelfie" class="secondary" hidden>Retake</button></div>
+    <p class="privacy-note" id="cameraStatus" aria-live="polite">Camera access works on localhost or an HTTPS website. Your selfie is submitted with this attendance request.</p>
+  </section>
+  <section class="selfie-card">
+    <h2 style="margin:0 0 6px">Lecture details</h2><p class="muted" style="margin-top:0">Use the code currently displayed by your teacher.</p>
+    <form method="post" id="attendanceForm">
+      <label class="field-label" for="code">Attendance code</label><input id="code" name="code" placeholder="e.g. CSE75" autocomplete="off" required maxlength="40">
+      <input type="hidden" name="selfie_data" id="selfieData"><input type="hidden" name="lat" id="lat"><input type="hidden" name="lon" id="lon">
+      <label class="consent-line"><input type="checkbox" name="selfie_consent" required><span>I consent to capturing and storing my selfie for attendance verification. I understand it may be reviewed by authorised college staff and should be handled according to the college's privacy policy.</span></label>
+      <button type="submit" id="submitAttendance" class="primary-btn" style="width:100%" disabled>Capture selfie to continue</button>
+      <p class="privacy-note">Selfies are stored outside the public static folder. Ask your college administrator about retention and deletion rules before using real student data.</p>
+    </form>
+  </section>
+</div>
+<section class="selfie-card" style="margin-top:20px"><h3 style="margin-top:0">How it works</h3><ol class="step-list"><li>Start the front camera and capture a new selfie.</li><li>Enter the active code shared by your teacher.</li><li>Allow location access if your teacher configured a classroom location.</li><li>Submit. Attend75 checks the session and prevents duplicate attendance.</li></ol><p class="privacy-note">Important: camera capture alone cannot prove liveness or prevent a student from showing a photo/video to the camera. For stronger anti-proxy checks, pair this with a rotating QR code, classroom location verification and authorised manual review or a properly tested liveness/face-verification service.</p><p><a href="{{ url_for('dashboard') }}">← Back to dashboard</a></p></section>
+<canvas id="captureCanvas" hidden></canvas>
+{% endblock %}
+{% block scripts %}
+<script>
+(()=>{
+ const video=document.getElementById('cameraVideo'), placeholder=document.getElementById('cameraPlaceholder'), preview=document.getElementById('selfiePreview');
+ const start=document.getElementById('startCamera'), capture=document.getElementById('captureSelfie'), retake=document.getElementById('retakeSelfie'), submit=document.getElementById('submitAttendance');
+ const status=document.getElementById('cameraStatus'), data=document.getElementById('selfieData'), canvas=document.getElementById('captureCanvas'); let stream=null;
+ function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} video.srcObject=null;}
+ start.addEventListener('click',async()=>{try{if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera API unavailable. Open the site on localhost or HTTPS.');stopCamera();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});video.srcObject=stream;video.hidden=false;preview.hidden=true;placeholder.hidden=true;capture.disabled=false;retake.hidden=true;data.value='';submit.disabled=true;status.textContent='Camera is ready. Look directly at the camera and capture your selfie.';}catch(e){status.textContent=e.message||'Camera permission was denied. Allow camera access and try again.';}});
+ capture.addEventListener('click',()=>{if(!stream||!video.videoWidth){status.textContent='Wait for the camera preview to load, then capture again.';return;}const maxW=960,scale=Math.min(1,maxW/video.videoWidth);canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);data.value=canvas.toDataURL('image/jpeg',0.82);preview.src=data.value;preview.hidden=false;video.hidden=true;placeholder.hidden=true;stopCamera();capture.disabled=true;retake.hidden=false;submit.disabled=false;submit.textContent='Submit attendance';status.textContent='Selfie captured. Review the preview and submit when ready.';});
+ retake.addEventListener('click',()=>{data.value='';preview.hidden=true;placeholder.hidden=false;capture.disabled=true;submit.disabled=true;submit.textContent='Capture selfie to continue';start.click();});
+ document.getElementById('attendanceForm').addEventListener('submit',e=>{if(!data.value){e.preventDefault();status.textContent='Please capture a selfie before submitting.';return;}if(navigator.geolocation){e.preventDefault();navigator.geolocation.getCurrentPosition(p=>{document.getElementById('lat').value=p.coords.latitude;document.getElementById('lon').value=p.coords.longitude;e.target.submit();},()=>{status.textContent='Location permission was not granted. Submitting without location; your teacher may require it.';e.target.submit();},{enableHighAccuracy:true,timeout:7000,maximumAge:0});}});
+ window.addEventListener('pagehide',stopCamera);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Attendance roster | Attend75{% endblock %}
+{% block head %}
+<style>
+.roster-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}.roster-head h1{font:600 clamp(25px,3vw,34px)/1.2 'Space Grotesk',sans-serif;letter-spacing:-1px;margin:10px 0}.roster-head p{color:var(--muted);font-size:13px;margin:0}.roster-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.roster-chip{border:1px solid var(--line);background:#121e33;border-radius:999px;padding:7px 11px;font-size:11px;color:#c4d2eb}.roster-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:20px}.roster-stat{padding:17px 19px;background:linear-gradient(145deg,#121f35,#0e1728);border:1px solid var(--line);border-radius:16px}.roster-stat span{display:block;color:var(--muted);font-size:11px}.roster-stat strong{display:block;font:600 27px 'Space Grotesk',sans-serif;margin-top:6px}.roster-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:17px}.roster-table{width:100%;border-collapse:collapse;min-width:680px}.roster-table th,.roster-table td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:middle}.roster-table th{color:#8fa3c5;background:#111c30;font-size:10px;text-transform:uppercase;letter-spacing:1px}.roster-table tr:last-child td{border-bottom:0}.student-cell{display:flex;align-items:center;gap:11px;min-width:185px}.student-avatar{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#1c3150;color:#bcd4ff;font-weight:700;flex-shrink:0}.student-name{font-weight:700;color:#edf3ff}.student-roll{color:var(--muted);font-size:10px;margin-top:3px}.selfie-thumb{width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid #3d5578;background:#0a1220}.selfie-missing{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;background:#18243a;color:#7186a8;font-size:10px;text-align:center}.status-pill{display:inline-flex;border-radius:99px;padding:5px 9px;background:#153b35;color:var(--mint);font-size:10px;font-weight:700}.empty-roster{padding:34px;text-align:center;color:var(--muted)}.empty-roster strong{display:block;color:#e5edfb;margin-bottom:5px}.roster-actions{display:flex;gap:9px;flex-wrap:wrap}@media(max-width:700px){.roster-head{display:block}.roster-actions{margin-top:16px}.roster-summary{grid-template-columns:1fr}.roster-stat{padding:13px 16px}.roster-stat strong{font-size:23px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="roster-head">
+  <div>
+    <span class="eyebrow">Faculty portal · attendance records</span>
+    <h1>{{ lecture['subject_name'] }}</h1>
+    <p>Review the students who marked attendance and the selfie captured for this lecture.</p>
+    <div class="roster-meta"><span class="roster-chip">Code: {{ lecture['code'] }}</span><span class="roster-chip">Started: {{ lecture['started_at']|replace('T',' ') }}</span><span class="roster-chip">{% if lecture['active'] %}Session active{% else %}Session closed{% endif %}</span></div>
+  </div>
+  <div class="roster-actions"><a class="button secondary" href="{{ url_for('dashboard') }}">← Dashboard</a></div>
+</div>
+<div class="roster-summary">
+  <div class="roster-stat"><span>Students marked present</span><strong>{{ attendees|length }}</strong></div>
+  <div class="roster-stat"><span>Selfies captured</span><strong>{{ attendees|selectattr('selfie_file')|list|length }}</strong></div>
+  <div class="roster-stat"><span>Verification method</span><strong style="font-size:19px">Selfie capture</strong></div>
+</div>
+<section class="card" style="padding:0;overflow:hidden">
+  <div style="padding:20px 22px;border-bottom:1px solid var(--line)"><h2 style="font:600 17px 'Space Grotesk',sans-serif;margin:0 0 4px">Student attendance roster</h2><p class="muted" style="font-size:11px;margin:0">Student names, college/roll IDs and private attendance selfies.</p></div>
+  {% if attendees %}
+  <div class="roster-table-wrap" style="border:0;border-radius:0">
+    <table class="roster-table">
+      <thead><tr><th>Student</th><th>Captured selfie</th><th>Marked at</th><th>Attendance</th></tr></thead>
+      <tbody>
+      {% for a in attendees %}
+        <tr>
+          <td><div class="student-cell"><div class="student-avatar">{{ a['student_name'][:1]|upper }}</div><div><div class="student-name">{{ a['student_name'] }}</div><div class="student-roll">Roll / College ID: {{ a['roll_number'] }}</div></div></div></td>
+          <td>{% if a['selfie_file'] %}<a href="{{ url_for('teacher_attendance_selfie', attendance_id=a['attendance_id']) }}" target="_blank" rel="noopener" title="Open captured selfie"><img class="selfie-thumb" src="{{ url_for('teacher_attendance_selfie', attendance_id=a['attendance_id']) }}" alt="Attendance selfie for {{ a['student_name'] }}" loading="lazy"></a>{% else %}<div class="selfie-missing">No selfie<br>recorded</div>{% endif %}</td>
+          <td>{{ a['joined_at']|replace('T',' ') }}</td>
+          <td><span class="status-pill">✓ Present</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<div class="empty-roster"><strong>No students have marked attendance yet.</strong>Once students submit attendance, their name, roll number and selfie will appear here.</div>{% endif %}
+</section>
+<p class="muted" style="font-size:10px;margin:13px 3px">Privacy note: selfies are served through a teacher-authorized route and are not placed in the public static folder. Only review images for attendance purposes.</p>
+{% endblock %}
